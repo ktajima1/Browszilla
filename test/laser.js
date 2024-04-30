@@ -3,16 +3,7 @@ const laserctx = laserCanvas.getContext('2d');
 const impactCanvas = document.getElementById('impact-canvas');
 const impactctx = impactCanvas.getContext('2d');
 
-
-const targetElement = document.getElementById('target-element');
-// const targetElement = document.body;
-
-let target;
-
-const body = document.body;
-const html = document.documentElement;
-
-let isDrawing = false;
+let laserTarget; //Target that is to be destroyed
 let startX, startY;
 
 $(window).on("load", function() {
@@ -20,64 +11,29 @@ $(window).on("load", function() {
     wrapChildrenInSpan(); //The laser only works for specific targets (cannot work on text nodes). Prepare the leaf nodes for destruction
 });
 
-/* TO-DO: Since the laser can be fired off in rapid succession without waiting for the previous target to be destroyed, 
- *        consider putting in a mechanism to prevent this behavior
- */
-// $(window).on("click", function(e) {
-//     if(isPaused) {
-//         //Get all leaf nodes and randomly select a target for destruction. Leaf children is updated every click
-//         let leafs = getLeafElements(document.body);
-//         let index = Math.floor(Math.random() * leafs.length);
-//         //Destroy the node
-//         target = leafs[index].parentNode;
-//         shootLaser();
-//     }
-// })
-
-//Start drawing (Function is to be removed)
-$(window).on("mousedown", function(e) {
-    isDrawing = true;
-    window.startX = e.offsetX;
-    window.startY = e.offsetY;
-})
-
-//Move mouse to draw (function to be removed)
-$(window).on("mousemove", function(e) {
-    console.log("drawing");
-
-    if (!isDrawing) return;
-    updateLaserStrokeStyle(window.startX, window.startY, targetElement); //Create new gradient from mouse position to target element
-    laserctx.beginPath();
-    laserctx.lineWidth = 8;
-    laserctx.lineCap = "round";
-    laserctx.shadowColor = "#dbbd6b"; //yellowish white
-    laserctx.shadowBlur = 10;
-    laserctx.moveTo(window.startX, window.startY);
-    laserctx.lineTo(e.offsetX, e.offsetY);
-    laserctx.stroke();
-})
-
-//Disable drawing (function to be removed)
-$(window).on("mouseup", function() {
-    isDrawing = false;
-})
-
-//Update canvas size when resizing window (Note: resets canvas, including lasers and Browszilla i think? Browszilla should exist on its own canvas then)
+//Update canvas size when resizing window 
+//Note: resets lasers (so that starting and ending positions are accurate)
 $(window).on("resize", updateCanvasSize);
 
-
-// Define animation variables
+/* Define animation variables */
 let currentTime = 0;
 const animationDuration = 2000;
-const segments = 15; //How many segment the animation should take place. Changes laser speed
-const laserSize = 0.12 * browszilla.height; //can be either height or width of Browszilla, since browszilla.height===browszilla.width
-
+//How many segment the animation should take place. Changes laser speed
+const segments = 15; 
+//Size of laser is dependent on Browszilla's size. This can be either height or width of Browszilla, 
+//since browszilla.height===browszilla.width
+const laserSize = 0.12 * browszilla.height; 
+/************************************************************************************************************
+ *                  DRAWS LASER FROM STARTING POSITION TO ENDING POSITION
+ ************************************************************************************************************/
 function drawLaser(mousePos, targetPos, laserctx, impactctx) {
+    //Progress is used to draw laser bit by bit rather than all at once
     const progress = currentTime / animationDuration;
     currentX = mousePos.x + (targetPos.x - mousePos.x) * progress;
     currentY = mousePos.y + (targetPos.y - mousePos.y) * progress;
-    updateLaserStrokeStyle(mousePos.x, mousePos.y, targetPos.x, targetPos.y, laserctx); //Create new gradient from mouse position to target element. This will color the laser properly
-    //Draw the laser
+    //Create new gradient from mouse position to target element. This will color the laser 
+    updateLaserStrokeStyle(mousePos.x, mousePos.y, targetPos.x, targetPos.y, laserctx); 
+    //Draw the laser segment
     laserctx.beginPath();
     laserctx.lineWidth = laserSize;
     laserctx.lineCap = "round";
@@ -87,11 +43,12 @@ function drawLaser(mousePos, targetPos, laserctx, impactctx) {
     laserctx.lineTo(currentX, currentY);
     laserctx.stroke();
 
-    if (progress < 1) {
+    if (progress < 1) { //Increase laser progress
         currentTime += animationDuration / segments;
         window.requestAnimationFrame(shootLaser);
     }
     else { //Laser has reached its destination
+        currentTime = 0; //Reset animation time for next laser
         //Draw the laser impact 
         var impactgrad = impactctx.createRadialGradient(targetPos.x, targetPos.y, laserSize, targetPos.x, targetPos.y, 2*laserSize); 
         impactgrad.addColorStop(0,"red");
@@ -102,47 +59,58 @@ function drawLaser(mousePos, targetPos, laserctx, impactctx) {
         impactctx.fillStyle = impactgrad;
         impactctx.arc(targetPos.x, targetPos.y,2*laserSize,0, 2*Math.PI); //Draw impact circle
         impactctx.fill();
-        
-        destroyElement(target); 
 
+        /* Destroys target with delay */
         // setTimeout(() => {
         //     destroyElement(target); //Destroys the <span> containing the target node (which also destroys the target node)
         // }, "1000"); //Set a delay here to extend the amount of time a laser hits the target before the target is destroyed
-        currentTime = 0; //Reset animation time for next laser
+
+        /* Instantly destroys target without delay */
+        destroyElement(laserTarget); 
     }
 }
 
+/************************************************************************************************************
+ *                  SHOOTS LASERS FROM BROWSZILLA'S EYES
+ ************************************************************************************************************/
 function shootLaser() {
     //Clear existing lasers
     clearEffects();
     var browszillaPos = getBrowszillaPosition();
-    var mousePos = getMousePosition();
-    var targetPos = getTargetPos(target);
-    // drawLaser(mousePos, targetPos, laserctx, impactctx);
+    var targetPos = getTargetPos(laserTarget);
+
     drawLaser(browszillaPos, targetPos, laserctx, impactctx);
     runAfterDelay(clearEffects, 1500); //Clear effects after shooting laser for 1.5 seconds
 }
 
-//Remove the element from DOM
-/*POTENTIAL PROBLEM: WHEN CANVAS IS PART OF A SPAN, THE SPAN MAY BE DELETED AS IT IS TREATED AS A LEAF NODE, THUS DESTROYING THE CANVAS
-     * WITH THE LASER. Fix: checked if the children of the span contains "canvas" */
+/************************************************************************************************************
+ *                  DELETES TARGETTED ELEMENT FROM DOM
+ ************************************************************************************************************/
 function destroyElement(target) {
     //Check if target is a <body> or if the child of the target <span> is a <canvas> element. The target span is guaranteed to only have one child
     //Note: it might be necessary to check whether the <canvas> is specifically the canvas containing Browszilla utilities rather than all canvas' in general
-    // (target.nodeName.toLowerCase() !== "body") && (target.childNodes[0].nodeName.toLowerCase() !== "canvas") original target bias
-    if((!target.classList.contains("indestructible")) && !target.childNodes[0].classList.contains("indestructible")) {
+    //Note: checking if the childNode (which could be a text node) has a class will throw a TypeError 
+    console.log("Looking at: " + target.nodeName + " and " + target.childNodes[0].nodeName);
+    if((!target.classList.contains("indestructible")) && (target.hasChildNodes() &&!target.childNodes[0].classList.contains("indestructible"))) {
         console.log("Destroying target: " + target + " Name: " + target.nodeName.toLowerCase());
         target.remove();
     }
 }
 
-//Runs a function after a delay
+/************************************************************************************************************
+ *                  RUNS A FUNCTION AFTER A DELAY                
+ ************************************************************************************************************/
 function runAfterDelay(funct, delay) {
     setTimeout( () => {
         funct();
     }, delay);
 }
 
+/************************************************************************************************************
+ *                  WRAPS LEAF NODES OF DOM IN A SPAN
+ ************************************************************************************************************/
+//The target mechanism is unable to find the position of text nodes so every leaf node is wrapped
+//in a span to resolve this issue
 function wrapChildrenInSpan() {
     let leafs = getLeafElements(document.body);
     leafs.forEach(leaf => {
@@ -153,11 +121,13 @@ function wrapChildrenInSpan() {
     });
 }
 
-/* For later: the starting position of the laser gradient should be the position of the Browszilla. Browszilla's position must be constantly
- * updated for this to work. Ending position of gradient is simply wherever the target HTML is*/
-//Change this function to change the color of the laser
+/************************************************************************************************************
+ *                  CHANGES COLOR OF LASER
+ ************************************************************************************************************/
+//The laser's canvas gradient is positioned relative to the Browszilla. The gradient's color goes from Browszilla to the target element
+//The colors of the laser gradient can be changed here
 function updateLaserStrokeStyle(startX, startY, targetX, targetY, ctx) {
-    var gradient = ctx.createLinearGradient(startX,startY,targetX,targetY);
+    var gradient = ctx.createLinearGradient(startX,startY,targetX,targetY); //create a linear gradient from Browszilla to the target element
     gradient.addColorStop(0,"#80ddf2"); //light blue
     gradient.addColorStop(0.3,"#7bf525"); //lime
     gradient.addColorStop(0.5,"#d6c911"); //yellow
@@ -166,7 +136,9 @@ function updateLaserStrokeStyle(startX, startY, targetX, targetY, ctx) {
     ctx.strokeStyle = gradient;
 }
 
-// Function to update canvas size based on target element
+/************************************************************************************************************
+ *                  CHANGES CANVAS SIZE TO CURRENT WINDOW SIZE
+ ************************************************************************************************************/
 function updateCanvasSize() {
 
     console.log("Resizing Canvas");
@@ -177,20 +149,22 @@ function updateCanvasSize() {
     laserCanvas.height = windowSize[1];
 }
 
+/************************************************************************************************************
+ *                  CLEARS LASER AND LASER IMPACT CANVASES
+ ************************************************************************************************************/
 function clearEffects() {
     clearCanvas(laserctx);
     clearCanvas(impactctx);
 }
-// Clear the canvas
+
+//Helper function to clear specificed canvas
 function clearCanvas(ctx) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 }
-
-function getChildren(parent) {
-    let numChildren = parent.children.length;
-    console.log(numChildren);
-}
-
+/************************************************************************************************************
+ *                  STORES ALL LEAF NODES OF A DOM IN AN ARRAY
+ ***********************************************************************************************************/
+/* PROBLEM: Nodes that shouldn't be selected may be selected
 /* PROBLEM: WHEN SELECTING LEAF NODES, THE SPAN CONTAINING THE CANVAS MAY BE ACCIDENTALLY SELECTED. THIS WILL DESTROY THE LASER */
 function getLeafElements(root) {
     //Convert HTMLCollections to Array
@@ -206,7 +180,7 @@ function getLeafElements(root) {
     return leafElements;
 }
 
-//Gets current mouse position
+//Returns current mouse position
 function getMousePosition() {
     let mousePosition = {
         x: window.startX,
@@ -215,8 +189,9 @@ function getMousePosition() {
     return mousePosition;
 }
 
-//The Browszilla's position is the top left of the bounding client rect. This may changed depending on the sprite used
-//Somehow the laser's position doesn't always line up with the position of the Browszilla. Not sure how to fix this issue
+//Returns Browszilla's current position
+//Note: When Browszilla is paused, the starting position of the laser may be different than expected
+//Note: Improvement could be to shoot lasers from both eyes rather than just one
 function getBrowszillaPosition() {
     let browszillaRect = browszilla.getBoundingClientRect();
     let browszillaPosition = {
@@ -228,7 +203,7 @@ function getBrowszillaPosition() {
     return browszillaPosition;
 }
 
-//This returns the position of the target element (the center of the target)
+//Returns the position of the target element (the center of the target)
 function getTargetPos(target) {
     // Get bounding box (position) of target element for targetting
     let targetRect = target.getBoundingClientRect();
@@ -240,6 +215,7 @@ function getTargetPos(target) {
     return targetPos;
 }
 
+//Returns the current size of the window
 function getWindowSize() {
     //Width and height of body element (web page)
     var width = Math.max( body.scrollWidth, body.offsetWidth,
@@ -248,13 +224,3 @@ function getWindowSize() {
             html.clientHeight, html.scrollHeight, html.offsetHeight);
     return [width,height];
 }
-
-// function createCanvas(width, height) {
-//     //Create new canvas
-//     var newcnvs = document.createElement("canvas");
-//     newcnvs.width = width;
-//     newcnvs.height = height;
-//     newcnvs.ctx = newcnvs.getContext("2d");
-//     return newcnvs;
-// }
-

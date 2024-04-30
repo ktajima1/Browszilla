@@ -1,4 +1,7 @@
 var browszilla = document.getElementById("browszilla");
+const body = document.body;
+const html = document.documentElement;
+
 let x = 0;
 let y = 0;
 let xSpeed = 2;
@@ -21,13 +24,17 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
+//Begin Browszilla movement
 $(window).on("load", animate);
 
+/************************************************************************************************************
+ *                  SHOOTS LASER ON CLICK
+ ************************************************************************************************************/
 $(window).on("click", function() {
     let leafs = getLeafElements(document.body);
     let index = Math.floor(Math.random() * leafs.length);
     //Destroy the node
-    target = leafs[index].parentNode;
+    laserTarget = leafs[index].parentNode;
     runAfterDelay(shootLaser, 500);
 
     /********************************************************************
@@ -47,6 +54,4 @@ $(window).on("click", function() {
     // }
     // isPaused = false;
     //Get all leaf nodes and randomly select a target for destruction. Leaf children is updated every click
-
 })
-// animate();
