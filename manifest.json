@@ -5,7 +5,7 @@
     "manifest_version": 3,
 
     "web_accessible_resources": [{
-        "resources": ["final-pixelzilla-cropped.png"],
+        "resources": ["images/final-pixelzilla-cropped.png"],
         "matches": ["<all_urls>"]
     }],
 
@@ -15,6 +15,8 @@
       "48": "images/chibizilla-48.png",
       "128": "images/chibizilla-128.png"
     },
+
+    "permissions": ["activeTab"],
 
     "content_scripts": [
       {

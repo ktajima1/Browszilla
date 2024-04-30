@@ -30,7 +30,7 @@ window.addEventListener("load", function() {
     browszilla.setAttribute("id", "browszilla");
     browszilla.classList.add("indestructible");
     browszilla.style="position:absolute";
-    browszilla.src = chrome.runtime.getURL("./final-pixelzilla-cropped.png");
+    browszilla.src = chrome.runtime.getURL("./images/final-pixelzilla-cropped.png");
     document.body.appendChild(browszilla);
     animate();
 })
@@ -44,22 +44,4 @@ window.addEventListener("click", function() {
     //Destroy the node
     laserTarget = leafs[index].parentNode;
     runAfterDelay(shootLaser, 500);
-
-    /********************************************************************
-     *              Former implementation with entity pausing
-     ********************************************************************/
-    // isPaused = true;
-    // if(isPaused) {
-    //     //Get all leaf nodes and randomly select a target for destruction. Leaf children is updated every click
-    //     let leafs = getLeafElements(document.body);
-    //     let index = Math.floor(Math.random() * leafs.length);
-    //     //Destroy the node
-    //     target = leafs[index].parentNode;
-    //     runAfterDelay(shootLaser, 500);
-    // } else{
-    //     clearEffects();
-    //     isPaused = false;
-    // }
-    // isPaused = false;
-    //Get all leaf nodes and randomly select a target for destruction. Leaf children is updated every click
 })

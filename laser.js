@@ -1,7 +1,3 @@
-// let laserCanvas = document.getElementById('laser-canvas');
-// let laserctx = laserCanvas.getContext('2d');
-// let impactCanvas = document.getElementById('impact-canvas');
-// let impactctx = impactCanvas.getContext('2d');
 let laserCanvas, laserctx, impactCanvas, impactctx;
 
 let laserTarget; //Target that is to be destroyed
@@ -104,7 +100,11 @@ function destroyElement(target) {
     //Note: it might be necessary to check whether the <canvas> is specifically the canvas containing Browszilla utilities rather than all canvas' in general
     //Note: checking if the childNode (which could be a text node) has a class will throw a TypeError 
     console.log("Looking at: " + target.nodeName + " and " + target.childNodes[0].nodeName);
-    if((!target.classList.contains("indestructible")) && (target.hasChildNodes() &&!target.childNodes[0].classList.contains("indestructible"))) {
+    // if((!target.classList.contains("indestructible")) && (target.hasChildNodes() &&!target.childNodes[0].classList.contains("indestructible"))) {
+    //     console.log("Destroying target: " + target + " Name: " + target.nodeName.toLowerCase());
+    //     target.remove();
+    // }
+    if(!target.classList.contains("indestructible")) {
         console.log("Destroying target: " + target + " Name: " + target.nodeName.toLowerCase());
         target.remove();
     }
@@ -121,11 +121,14 @@ function runAfterDelay(funct, delay) {
 
 /************************************************************************************************************
  *                  WRAPS LEAF NODES OF DOM IN A SPAN
+ * NOTE: CURRENTLY WRAPPING ALL ELEMENTS, NOT JUST LEAF NODES TO EXPEDIATE DESTROYING PROCESS
+ *       UNCOMMENT CORRESPONDING LINE TO WRAP ONLY LEAVES
  ************************************************************************************************************/
 //The target mechanism is unable to find the position of text nodes so every leaf node is wrapped
 //in a span to resolve this issue
 function wrapChildrenInSpan() {
-    let leafs = getLeafElements(document.body);
+    // let leafs = getLeafElements(document.body); //Uncomment this line to remove only leafNodes
+    let leafs = Array.prototype.slice.call(root.getElementsByTagName("*"), 0); //remove this line if you wish to remove only leaf nodes
     leafs.forEach(leaf => {
         let wrapper = document.createElement('span');
         
@@ -153,7 +156,6 @@ function updateLaserStrokeStyle(startX, startY, targetX, targetY, ctx) {
  *                  CHANGES CANVAS SIZE TO CURRENT WINDOW SIZE
  ************************************************************************************************************/
 function updateCanvasSize() {
-
     console.log("Resizing Canvas");
     var windowSize = getWindowSize(); //returns an array with [width, height]
     impactCanvas.width = windowSize[0];
