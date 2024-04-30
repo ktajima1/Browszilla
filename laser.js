@@ -1,19 +1,32 @@
-const laserCanvas = document.getElementById('laser-canvas');
-const laserctx = laserCanvas.getContext('2d');
-const impactCanvas = document.getElementById('impact-canvas');
-const impactctx = impactCanvas.getContext('2d');
+// let laserCanvas = document.getElementById('laser-canvas');
+// let laserctx = laserCanvas.getContext('2d');
+// let impactCanvas = document.getElementById('impact-canvas');
+// let impactctx = impactCanvas.getContext('2d');
+let laserCanvas, laserctx, impactCanvas, impactctx;
 
 let laserTarget; //Target that is to be destroyed
 let startX, startY;
 
-$(window).on("load", function() {
+window.addEventListener("load", function() {
+    laserCanvas = document.createElement("canvas");
+    laserCanvas.setAttribute("id", "laser-canvas");
+    laserCanvas.classList.add("indestructible");
+    document.body.appendChild(laserCanvas);
+    laserctx = laserCanvas.getContext('2d');
+
+    impactCanvas = document.createElement("canvas");
+    impactCanvas.setAttribute("id", "impact-canvas");
+    impactCanvas.classList.add("indestructible");
+    document.body.appendChild(impactCanvas);
+    impactctx = impactCanvas.getContext('2d');
+
     updateCanvasSize(); //Update the canvas size to the size of body. This is where the lasers and browszilla sprite exist
     wrapChildrenInSpan(); //The laser only works for specific targets (cannot work on text nodes). Prepare the leaf nodes for destruction
 });
 
 //Update canvas size when resizing window 
 //Note: resets lasers (so that starting and ending positions are accurate)
-$(window).on("resize", updateCanvasSize);
+window.addEventListener("resize", updateCanvasSize);
 
 /* Define animation variables */
 let currentTime = 0;
@@ -22,7 +35,7 @@ const animationDuration = 2000;
 const segments = 15; 
 //Size of laser is dependent on Browszilla's size. This can be either height or width of Browszilla, 
 //since browszilla.height===browszilla.width
-const laserSize = 0.12 * browszilla.height; 
+const laserSize = 0.12 * 500; 
 /************************************************************************************************************
  *                  DRAWS LASER FROM STARTING POSITION TO ENDING POSITION
  ************************************************************************************************************/

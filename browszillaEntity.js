@@ -1,4 +1,4 @@
-var browszilla = document.getElementById("browszilla");
+let browszilla;
 const body = document.body;
 const html = document.documentElement;
 
@@ -25,12 +25,20 @@ function animate() {
 }
 
 //Begin Browszilla movement
-$(window).on("load", animate);
+window.addEventListener("load", function() {
+    browszilla = document.createElement("img");
+    browszilla.setAttribute("id", "browszilla");
+    browszilla.classList.add("indestructible");
+    browszilla.style="position:absolute";
+    browszilla.src = chrome.runtime.getURL("./final-pixelzilla-cropped.png");
+    document.body.appendChild(browszilla);
+    animate();
+})
 
 /************************************************************************************************************
  *                  SHOOTS LASER ON CLICK
  ************************************************************************************************************/
-$(window).on("click", function() {
+window.addEventListener("click", function() {
     let leafs = getLeafElements(document.body);
     let index = Math.floor(Math.random() * leafs.length);
     //Destroy the node

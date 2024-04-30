@@ -2,13 +2,12 @@
     "name": "Browszilla",
     "description": "Web Destroying Extension",
     "version": "1.0",
-    "permissions": ["activeTab"],
     "manifest_version": 3,
-    
-    "action": {
-      "default_popup": "browszilla.html",
-      "default_icon": "Chibi_Godzilla.png"
-    },
+
+    "web_accessible_resources": [{
+        "resources": ["final-pixelzilla-cropped.png"],
+        "matches": ["<all_urls>"]
+    }],
 
     "icons": {
       "16": "images/chibizilla-16.png",
@@ -19,10 +18,14 @@
 
     "content_scripts": [
       {
-        "js": ["scripts/content.js"],
-        "matches": [
-          "<all_urls>"
-        ]
+        "matches": ["<all_urls>"],
+        "css": [
+          "bzilla.css"
+        ],
+        "js": [
+          "browszillaEntity.js",
+          "laser.js"
+          ]
       }
     ]
   }
